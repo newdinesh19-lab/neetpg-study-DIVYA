@@ -814,7 +814,7 @@ ${quoteCard(qi,'butter',true)}
 <div class="card coral"><div class="mute" style="color:#9a3b25;font-weight:800">YOUR NEXT SESSION</div>${rc.map(r=>recRow(r,nx)).join('')}${nx?`<button class="btn full" style="margin-top:10px;font-size:16px" data-a="nextsession">START MY NEXT SESSION ♡</button><div class="small" style="text-align:center;margin-top:4px">${esc(nx.title)}</div>`:''}</div>
 <div class="grid2"><div class="card peach tap" data-a="tab" data-v="settingsgo"><div class="mute">NEET PG 2027</div><div class="big">${n!=null&&n>0?n:'—'}</div><div class="small">${esc(cdText())}</div></div>
 <div class="card"><div class="mute">Today</div><div class="big">${hm(focusMin)}</div><div class="small">focused · ${hm(avail)} available</div><div class="bar" style="margin-top:6px"><i style="width:${Math.min(100,avail?focusMin/avail*100:0)}%"></i></div></div></div>
-<div class="card"><div class="row sp"><h3>Today's plan${tasks.length?` <span class="mute small">· ${done}/${tasks.length} done</span>`:''}</h3><button class="chip sm" data-a="plansheet">${pl?'Edit':'Plan my day ♡'}</button></div>${modeChips(mode)}<div class="small mute" style="margin:4px 0 6px">${MODEINFO[mode]}</div>${tasks.length?`<div class="bar" style="margin:4px 0 6px"><i style="width:${done/tasks.length*100}%"></i></div>`+tasks.slice(0,5).map(t=>`<div class="sub"><button class="ck ${t.done?'on':''}" data-a="hdone" data-v="${t.id}">${t.done?'✓':''}</button><span class="grow ${t.done?'mute':''}" data-a="hrun" data-v="${t.id}">${esc(t.title)}</span><span class="mute small">${t.min}m</span></div>`).join('')+(tasks.length>5?`<div class="mute small">+${tasks.length-5} more in Edit</div>`:''):'<div class="mute">No plan yet — tell me your hours and I will build a small one.</div>'}</div>
+<div class="card"><div class="row sp"><h3>Today's plan${tasks.length?` <span class="mute small">· ${done}/${tasks.length} done</span>`:''}</h3><button class="chip sm" data-a="plansheet">${pl?'Edit':'Plan my day ♡'}</button></div>${modeChips(mode)}<div class="small mute" style="margin:4px 0 6px">${MODEINFO[mode]}</div>${tasks.length?`<div class="bar" style="margin:4px 0 6px"><i style="width:${done/tasks.length*100}%"></i></div>`+ordTasks(tasks).slice(0,5).map(t=>`<div class="sub"><button class="ck ${t.done?'on':''}" data-a="hdone" data-v="${t.id}">${t.done?'✓':''}</button><span class="grow ${t.done?'mute':''}" data-a="hrun" data-v="${t.id}">${esc(t.title)}</span><span class="mute small">${t.block&&t.start?fmt12(t.start)+'–'+fmt12(t.end):t.min+'m'}</span></div>`).join('')+(tasks.length>5?`<div class="mute small">+${tasks.length-5} more in Edit</div>`:''):'<div class="mute">No plan yet — tell me your hours and I will build a small one.</div>'}</div>
 <div class="grid2"><div class="card sage row sp tap" data-a="tab" data-v="progress"><div><div class="mute">Syllabus mastery</div><div class="small">${weekActive()} active day${weekActive()===1?'':'s'} this week</div></div>${ring(ov,60,'#6f8a58',Math.round(ov*100)+'%')}</div>
 <div class="card butter tap" data-a="duelist"><div class="mute">Ready to revise</div><div class="big">${dueN}</div><div class="small">${dueN?'whenever you are ready':'nothing waiting'}</div></div></div>
 <button class="btn soft full" data-a="fresh">🌿 NEED A FRESH START?</button>
@@ -920,13 +920,36 @@ function weekCard(){const ph=phase(),days=[];for(let i=-6;i<=0;i++){const d=addD
  return`<div class="card sage"><div class="row sp"><h3 style="margin:0">This week</h3><span class="pill">${esc(ph.t)}</span></div><div class="small" style="margin:4px 0">${esc(ph.d)}</div>${cd()==null?'<div class="small mute">Set your exam date in Settings so the phase follows your calendar.</div>':''}
 <div class="row" style="justify-content:space-between;margin:8px 0">${days.map(x=>`<div style="text-align:center"><div class="small mute">${nm(x.d)}</div><div class="ck ${x.act?'on':''}" style="margin:3px auto;width:22px;height:22px;font-size:11px">${x.act?'✓':''}</div><div class="small mute">${x.n?x.done+'/'+x.n:'–'}</div></div>`).join('')}</div>
 ${up.length?`<details><summary class="small">Suggested next topics</summary>${up.map((x,i)=>`<div class="small" style="padding:3px 0">${addDays(today(),i)===today()?'Today':nm(addDays(today(),i))} · ${esc(x.t.name)} <span class="mute">(${esc(STEPL[x.st].split(' · ')[0])})</span></div>`).join('')}<div class="small mute">Suggestions only — your plan is rebuilt each day from where you actually are.</div></details>`:''}</div>`}
+
+const ACTS=['Study','Revise','MCQs','Active recall','Notes / flashcards','Image questions','Other'];
+const t2m=x=>{const m=/^(\d{1,2}):(\d{2})$/.exec(x||'');return m?+m[1]*60+ +m[2]:null};
+const m2t=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const fmt12=x=>{const m=t2m(x);if(m==null)return'';const h=Math.floor(m/60),mm=m%60;return(h%12||12)+':'+String(mm).padStart(2,'0')+(h<12?'am':'pm')};
+function ordTasks(a){const timed=a.filter(t=>t.block&&t.start).sort((x,y)=>t2m(x.start)-t2m(y.start)),rest=a.filter(t=>!(t.block&&t.start));return timed.concat(rest)}
+function sysList(sid){return[...new Set(TOPICS.filter(t=>t.sid===sid).map(subsec))].sort()}
+function plSync(){if(!ui.pl)return;const n=$('plNote');if(n)ui.pl.note=n.value;const a=$('plS'),b=$('plE');if(a&&a.value)ui.pl.start=a.value;if(b&&b.value)ui.pl.end=b.value}
+function plOverlap(f){const a=t2m(f.start),b=t2m(f.end);if(a==null||b==null||b<=a)return[];const pl=S.plans[today()];return pl?pl.tasks.filter(t=>t.block&&t.start&&t.id!==f.id&&t2m(t.start)<b&&t2m(t.end)>a):[]}
+function plForm(){const f=ui.pl;if(!f)return'';const a=t2m(f.start),b=t2m(f.end),dur=(a!=null&&b!=null&&b>a)?b-a:0,ov=plOverlap(f);
+ const sys=f.sid?sysList(f.sid):[],tps=f.sid&&f.sys?TOPICS.filter(t=>t.sid===f.sid&&subsec(t)===f.sys).sort((x,y)=>x.name.localeCompare(y.name)):[];
+ const sel=(k,opts,cur,ph,dis)=>`<select data-sel="pl_${k}" ${dis?'disabled':''}><option value="">${ph}</option>${opts.map(o=>`<option value="${esc(o[0])}" ${cur===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select>`;
+ return`<div class="card sage" id="plForm"><h3 style="margin:0 0 8px">${f.id?'Edit study block':'New study block'}</h3>
+<label class="mute small">Subject</label>${sel('sid',SUBJ.map(x=>[x.id,x.emo+' '+x.name]),f.sid,'Choose subject…')}
+<label class="mute small" style="margin-top:6px;display:block">System / section</label>${sel('sys',sys.map(x=>[x,x]),f.sys,f.sid?'Choose system…':'Pick a subject first',!f.sid)}
+<label class="mute small" style="margin-top:6px;display:block">Subsection / topic</label>${sel('tid',tps.map(x=>[x.id,x.name]),f.tid,f.sys?'Whole system (any topic)':'Pick a system first',!f.sys)}
+<label class="mute small" style="margin-top:6px;display:block">Activity</label>${sel('act',ACTS.map(x=>[x,x]),f.act||'Study','Activity')}
+<div class="grid2" style="margin-top:6px"><div><label class="mute small">From</label><input type="time" id="plS" data-sel="pl_start" value="${esc(f.start||'')}"></div><div><label class="mute small">To</label><input type="time" id="plE" data-sel="pl_end" value="${esc(f.end||'')}"></div></div>
+<div class="small" style="margin:6px 0"><b>${dur?`Duration: ${dur>=60?Math.floor(dur/60)+'h ':''}${dur%60?dur%60+'m':''}`:(a!=null&&b!=null?'End time must be after start time':'Choose from and to times')}</b></div>
+${ov.length?`<div class="note" style="margin-bottom:6px">Overlaps with: ${ov.map(x=>esc(x.title)+' ('+fmt12(x.start)+'–'+fmt12(x.end)+')').join(', ')}. You can still save it.</div>`:''}
+<input type="text" id="plNote" placeholder="Note (optional) — e.g. finish chapter + 20 MCQs" value="${esc(f.note||'')}">
+<div class="row" style="margin-top:8px"><button class="btn grow" data-a="plsave">${f.id?'Save changes':'Add to my day'}</button><button class="btn ghost" data-a="plcancel">Cancel</button></div></div>`}
 function planSheet(){const pl=S.plans[today()],H=ui.hours||S.settings.hours||4;
  return`<div class="sheet-bg" data-a="sheetbg"><div class="sheet"><div class="row sp"><h2>Plan my day</h2><button class="mini" data-a="sheetx">✕</button></div>
 ${weekCard()}
+${ui.pl?plForm():`<button class="btn full" style="margin-bottom:10px" data-a="pladd">＋ Plan a block: subject · system · from–to time</button>`}
 <div class="card peach"><div class="mute">Hours you can genuinely study today</div><div class="row wrap" style="margin:8px 0">${[1,2,3,4,5,6].map(x=>`<button class="chip ${H===x?'on':''}" data-a="hrs" data-v="${x}">${x}h</button>`).join('')}<input type="number" id="hrsC" min="0.5" max="14" step="0.5" placeholder="custom" style="width:90px" value="${[1,2,3,4,5,6].includes(H)?'':H}"></div>
 ${modeChips(ui.genMode||'normal')}<div class="small mute" style="margin-top:4px">${MODEINFO[ui.genMode||'normal']}</div><button class="btn full" style="margin-top:8px" data-a="gen">${pl?'REBUILD THE REST OF TODAY ♡':'GENERATE MY PLAN ♡'}</button><div class="mute small" style="margin-top:6px">Done and custom tasks are always kept. Missed days never pile up — the plan is rebuilt from where each topic stands.</div></div>
 ${ui.genNote?`<div class="note" style="margin-bottom:10px">${esc(ui.genNote)}</div>`:''}
-${pl?pl.tasks.map((t,i)=>{const ic={study:'📖',rev:'🔁',mcq:'✏️',err:'📒',break:'☕',custom:'⭐',recall:'🃏'}[t.type];return`<div class="task ${t.done?'done':''} ${t.type==='break'?'brk':''}"><button class="ck ${t.done?'on':''}" data-a="tdone" data-v="${t.id}">${t.done?'✓':''}</button><div class="grow" ${t.type!=='break'&&t.type!=='custom'?`data-a="topen" data-v="${t.id}"`:''}><div class="tt"><b>${ic} ${esc(t.title)}</b></div><div class="mute small">${t.min} min${t.sid?' · '+esc(SID[t.sid].name):''}</div></div>${t.type==='study'?`<button class="mini" data-a="tswap" data-v="${t.id}">↻</button>`:''}<button class="mini" data-a="tup" data-v="${i}">↑</button><button class="mini" data-a="tdn" data-v="${i}">↓</button><button class="mini" data-a="tdel" data-v="${t.id}">✕</button></div>`}).join('')+`<div class="card row"><input type="text" id="custTxt" placeholder="Add your own task…"><input type="number" id="custMin" value="20" style="width:80px"><button class="btn sm" data-a="tadd">Add</button></div>`:''}</div></div>`}
+${pl?ordTasks(pl.tasks).map(t=>{const i=pl.tasks.indexOf(t),bk=t.block&&t.start;const ic=bk?'🕘':{study:'📖',rev:'🔁',mcq:'✏️',err:'📒',break:'☕',custom:'⭐',recall:'🃏'}[t.type];const sub=[bk?fmt12(t.start)+' – '+fmt12(t.end):'',t.min+' min',t.sid?SID[t.sid].name:'',t.sys&&t.sys!==(SID[t.sid]||{}).name?t.sys:''].filter(Boolean).join(' · ');return`<div class="task ${t.done?'done':''} ${t.type==='break'?'brk':''}"><button class="ck ${t.done?'on':''}" data-a="tdone" data-v="${t.id}">${t.done?'✓':''}</button><div class="grow" ${t.type!=='break'&&(t.type!=='custom'||t.tid)?`data-a="topen" data-v="${t.id}"`:''}><div class="tt"><b>${ic} ${esc(t.title)}</b></div><div class="mute small">${esc(sub)}</div>${t.note?`<div class="small">${esc(t.note)}</div>`:''}</div>${t.type==='study'?`<button class="mini" data-a="tswap" data-v="${t.id}">↻</button>`:''}${bk?`<button class="mini" data-a="pledit" data-v="${t.id}">✎</button>`:`<button class="mini" data-a="tup" data-v="${i}">↑</button><button class="mini" data-a="tdn" data-v="${i}">↓</button>`}<button class="mini" data-a="tdel" data-v="${t.id}">✕</button></div>`}).join('')+`<div class="card row"><input type="text" id="custTxt" placeholder="Add your own task…"><input type="number" id="custMin" value="20" style="width:80px"><button class="btn sm" data-a="tadd">Add</button></div>`:''}</div></div>`}
 
 /* ---- HIGH-YIELD ---- */
 function hyAction(t){return`<button class="btn sm" data-a="hyact" data-v="${t.id}">Study</button>`}
@@ -1137,15 +1160,24 @@ document.addEventListener('click',async ev=>{const el=ev.target.closest('[data-a
  case'tup':{const i=+v,t=S.plans[today()].tasks;if(i>0){[t[i-1],t[i]]=[t[i],t[i-1]];save();render()}return}
  case'tdn':{const i=+v,t=S.plans[today()].tasks;if(i<t.length-1){[t[i+1],t[i]]=[t[i],t[i+1]];save();render()}return}
  case'tdel':{const pl=S.plans[today()];pl.tasks=pl.tasks.filter(x=>x.id!==v);save();return render()}
- case'tadd':{const tx=$('custTxt').value.trim();if(!tx)return toast('Type a task first');S.plans[today()].tasks.push({id:uid(),type:'custom',title:tx,min:Math.max(5,+$('custMin').value||20),done:false});save();return render()}
+ case'pladd':{const pl=S.plans[today()],bl=pl?pl.tasks.filter(t=>t.block&&t.end):[],last=bl.length?bl.map(t=>t2m(t.end)).sort((a,b)=>b-a)[0]:540;ui.pl={start:m2t(last),end:m2t(last+60),act:'Study',sid:'',sys:'',tid:'',note:''};return render()}
+ case'pledit':{const t=S.plans[today()].tasks.find(x=>x.id===v);if(!t)return;ui.pl={id:t.id,sid:t.sid||'',sys:t.sys||'',tid:t.tid||'',act:t.act||'Study',start:t.start,end:t.end,note:t.note||''};return render()}
+ case'plcancel':ui.pl=null;return render();
+ case'plsave':{plSync();const f=ui.pl;if(!f)return;const a=t2m(f.start),b=t2m(f.end);if(!f.sid)return toast('Choose a subject');if(a==null||b==null)return toast('Choose from and to times');if(b<=a)return toast('End time must be after start time');
+  let pl=S.plans[today()];if(!pl)pl=S.plans[today()]={hours:S.settings.hours||4,mode:'normal',low:false,tasks:[],gen:Date.now()};
+  const tp=f.tid?T(f.tid):null,what=tp?tp.name:(f.sys||SID[f.sid].name),act=f.act||'Study';
+  const rec={type:'custom',block:true,title:act+': '+what,sid:f.sid,sys:f.sys,tid:f.tid||'',act,start:f.start,end:f.end,min:b-a,note:(f.note||'').trim()};
+  if(f.id){const i=pl.tasks.findIndex(x=>x.id===f.id);if(i>=0)pl.tasks[i]=Object.assign({},pl.tasks[i],rec);else pl.tasks.push(Object.assign({id:uid(),done:false},rec))}else pl.tasks.push(Object.assign({id:uid(),done:false},rec));
+  ui.pl=null;save();toast('Added to your day');return render()}
+ case'tadd':{const tx=$('custTxt').value.trim();if(!tx)return toast('Type a task first');if(!S.plans[today()])S.plans[today()]={hours:S.settings.hours||4,mode:'normal',low:false,tasks:[],gen:Date.now()};S.plans[today()].tasks.push({id:uid(),type:'custom',title:tx,min:Math.max(5,+$('custMin').value||20),done:false});save();return render()}
  case'subj':ui.subj=v;ui.filter='all';window.scrollTo(0,0);return render();
  case'back':ui.subj=null;return render();
  case'gosub':ui.tab='study';ui.subj=v;ui.filter='all';return render();
  case'sort':ui.sort=v;ui.keepScroll=1;return render();
  case'filt':ui.filter=v;ui.keepScroll=1;return render();
  case'topic':ui.search=false;return openTopic(v,el.dataset.hl);
- case'sheetx':ui.sheet=null;return render();
- case'sheetbg':if(ev.target===el){ui.sheet=null;render()}return;
+ case'sheetx':ui.sheet=null;ui.pl=null;return render();
+ case'sheetbg':if(ev.target===el){ui.sheet=null;ui.pl=null;render()}return;
  case'confirmgo':{const cb=confirmCb;ui.sheet=null;confirmCb=null;if(cb)await cb();return render()}
  case'step':{const t=T(ui.sheet.tid),nv=!prog(t)[v];setStep(t.id,v,nv);if(nv){fx(['⭐']);toast('Step complete!')}ui.keepScroll=1;return render()}
  case'fstep':{setStep(ui.focus.tid,v,true);ui.focus.step=nextStep(T(ui.focus.tid));toast('Step marked done 🌸');return render()}
@@ -1220,7 +1252,7 @@ document.addEventListener('click',async ev=>{const el=ev.target.closest('[data-a
 document.addEventListener('change',async ev=>{const t=ev.target;
  if(t.id==='noteIn'&&ui.focus){setScratch(ui.focus.tid,t.value)}
  else if(t.dataset&&t.dataset.note){S.errors[t.dataset.note].note=t.value;save()}
- else if(t.dataset&&t.dataset.sel){const k=t.dataset.sel;if(k==='prmSid')ui.prm.sid=t.value;else ui[k]=t.value;ui.keepScroll=1;render()}
+ else if(t.dataset&&t.dataset.sel){const k=t.dataset.sel;if(k.indexOf('pl_')===0&&ui.pl){plSync();ui.pl[k.slice(3)]=t.value;if(k==='pl_sid'){ui.pl.sys='';ui.pl.tid=''}if(k==='pl_sys')ui.pl.tid='';ui.keepScroll=1;render()}else if(k==='prmSid')ui.prm.sid=t.value;else ui[k]=t.value;ui.keepScroll=1;render()}
  else if(t.id==='slFile'){const n=$('slName').value.trim(),w=$('slWin').value.trim();if(!n)return toast('Give the list a name first');S.srcName180=S.srcName180||'';await importSourceList(t.files[0],n,w)}});
 document.addEventListener('input',ev=>{if(ev.target.id==='nq'){ui.nq=ev.target.value;const r=$('nres');if(r)r.innerHTML=noteListHtml(ui.nq,ui.ntf==='bm'?'':ui.ntf,ui.ntf==='bm')}
  if(ev.target.id==='sq'){ui.sqv=ev.target.value;doSearch(ev.target.value)}});
